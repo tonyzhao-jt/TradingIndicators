@@ -1,0 +1,1 @@
+cd /workspace/trading_indicators/crawler && python main_trading.py --pages 1 --max-per-page 2 --verbose

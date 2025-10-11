@@ -1,0 +1,2 @@
+pynesys-pynecore[cli]
+google-adk

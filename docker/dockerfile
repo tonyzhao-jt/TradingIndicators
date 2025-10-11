@@ -1,0 +1,63 @@
+# 纯 CPU 容器，基于 slim Python 镜像
+FROM python:3.13-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV POETRY_VIRTUALENVS_CREATE=false
+
+# 常用依赖和Chrome浏览器依赖
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        curl \
+        ca-certificates \
+        libsndfile1 \
+        wget \
+        gnupg \
+        unzip \
+        xvfb \
+        libxi6 \
+        libgconf-2-4 \
+        default-jdk \
+        libxss1 \
+        libappindicator3-1 \
+        libasound2 \
+        libatk-bridge2.0-0 \
+        libdrm2 \
+        libxcomposite1 \
+        libxcursor1 \
+        libxdamage1 \
+        libxext6 \
+        libxfixes3 \
+        libxi6 \
+        libxrandr2 \
+        libxrender1 \
+        libxss1 \
+        libxtst6 \
+        fonts-liberation \
+        libnss3 \
+        lsb-release && \
+    # 添加Google Chrome仓库
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace/trading_indicators
+
+# 安装基础 Python 包
+RUN pip install --upgrade pip setuptools wheel
+
+# 复制项目文件（如果有 requirements.txt 会一起复制）
+COPY . /workspace/trading_indicators
+
+# 如果有 requirements.txt，会安装依赖
+RUN if [ -f /workspace/trading_indicators/requirements.txt ]; then \
+        pip install --no-cache-dir -r /workspace/trading_indicators/requirements.txt; \
+    else \
+        echo "no requirements.txt found, skipping pip install"; \
+    fi
+
+# 默认命令，改为你需要的入口
+CMD ["bash"]
