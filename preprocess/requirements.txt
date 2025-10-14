@@ -1,2 +1,8 @@
 pynesys-pynecore[cli]
+litellm
 google-adk
+vllm
+python-dotenv
+backtrader
+pandas
+numpy

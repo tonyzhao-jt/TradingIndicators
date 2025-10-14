@@ -76,6 +76,7 @@ def setup_argparser():
   %(prog)s --pages 3 --max-per-page 10        # 每页最多10个脚本
   %(prog)s --start-page 2 --pages 3           # 从第2页开始，爬取3页
   %(prog)s --pages 1 --no-selenium           # 禁用Selenium（不推荐）
+  %(prog)s --strategy-only --pages 2          # 只爬取策略页面（包括编辑推荐）
         """
     )
     
@@ -151,6 +152,12 @@ def setup_argparser():
         help='如果已存在输出文件，是否重新爬取已存在的条目（默认: 跳过现有条目）'
     )
     
+    parser.add_argument(
+        '--strategy-only',
+        action='store_true',
+        help='只爬取策略数据，包括普通策略页面和编辑推荐策略页面'
+    )
+    
     return parser
 
 def validate_args(args):
@@ -196,57 +203,85 @@ def crawl_preview_data(crawler, args):
     
     all_preview_data = []
     
-    for page_num in range(args.start_page, args.start_page + args.pages):
-        if not args.quiet:
-            print(f"\n📄 爬取第 {page_num} 页...")
+    # 获取要爬取的URL列表
+    urls_to_crawl = getattr(args, 'strategy_urls', [(args.base_url, args.pages)])
+    
+    for url_index, (base_url, max_pages) in enumerate(urls_to_crawl):
+        if not args.quiet and len(urls_to_crawl) > 1:
+            url_type = "编辑推荐策略" if "editors-picks" in base_url else "策略"
+            print(f"\n📑 爬取 {url_type} 页面: {base_url}")
         
-        # 构造页面URL
-        if page_num == 1:
-            page_url = args.base_url
-        else:
-            separator = '&' if '?' in args.base_url else '?'
-            page_url = f"{args.base_url}{separator}page={page_num}"
-        
-        if args.verbose:
-            print(f"   URL: {page_url}")
-        
-        try:
-            # 提取链接和预览信息
-            preview_links = crawler.extract_links(page_url)
-            
-            if preview_links:
-                # 限制每页的脚本数量
-                if args.max_per_page:
-                    limited_links = preview_links[:args.max_per_page]
+        # 使用该URL特定的页数限制
+        pages_to_crawl = min(args.pages, max_pages)
+        for page_num in range(args.start_page, args.start_page + pages_to_crawl):
+            if not args.quiet:
+                if len(urls_to_crawl) == 1:
+                    page_desc = f"第 {page_num} 页"
                 else:
-                    limited_links = preview_links
-                
-                # 添加页面标记
-                for link_info in limited_links:
-                    link_info['crawl_page'] = page_num
-                
-                all_preview_data.extend(limited_links)
-                
-                if not args.quiet:
-                    print(f"   ✅ 成功提取 {len(limited_links)} 个脚本预览信息")
-                
-                if args.verbose:
-                    for i, script_info in enumerate(limited_links[:3]):  # 显示前3个
-                        print(f"     [{i+1}] {script_info.get('preview_title', 'N/A')}")
-                        print(f"         作者: {script_info.get('preview_author', 'N/A')}")
-                        print(f"         点赞: {script_info.get('preview_likes_count', 0)}")
-                    if len(limited_links) > 3:
-                        print(f"     ... 还有 {len(limited_links) - 3} 个脚本")
-                        
+                    url_type = "编辑推荐策略" if "editors-picks" in base_url else "策略"
+                    page_desc = f"{url_type} 第 {page_num} 页"
+                print(f"\n📄 爬取 {page_desc}...")
+            
+            # 构造页面URL - 使用TradingView的分页模式
+            if page_num == 1:
+                page_url = base_url
             else:
-                if not args.quiet:
-                    print(f"   ⚠ 第 {page_num} 页未提取到任何脚本")
-                    
-        except Exception as e:
-            print(f"   ❌ 第 {page_num} 页爬取失败: {e}")
+                # TradingView使用 /page-{num}/ 格式
+                # 需要将查询参数保持在URL的末尾
+                if '?' in base_url:
+                    url_parts = base_url.split('?', 1)
+                    base_path = url_parts[0].rstrip('/')  # 移除末尾的斜杠
+                    query_params = '?' + url_parts[1]
+                    page_url = f"{base_path}/page-{page_num}/{query_params}"
+                else:
+                    base_path = base_url.rstrip('/')  # 移除末尾的斜杠
+                    page_url = f"{base_path}/page-{page_num}/"
+            
             if args.verbose:
-                import traceback
-                traceback.print_exc()
+                print(f"   URL: {page_url}")
+            
+            try:
+                # 提取链接和预览信息
+                preview_links = crawler.extract_links(page_url)
+                
+                if preview_links:
+                    # 限制每页的脚本数量
+                    if args.max_per_page:
+                        limited_links = preview_links[:args.max_per_page]
+                    else:
+                        limited_links = preview_links
+                    
+                    # 添加页面标记和URL来源信息
+                    for link_info in limited_links:
+                        link_info['crawl_page'] = page_num
+                        link_info['source_url'] = base_url
+                        if "editors-picks" in base_url:
+                            link_info['is_editors_pick'] = True
+                        else:
+                            link_info['is_editors_pick'] = False
+                    
+                    all_preview_data.extend(limited_links)
+                    
+                    if not args.quiet:
+                        print(f"   ✅ 成功提取 {len(limited_links)} 个脚本预览信息")
+                    
+                    if args.verbose:
+                        for i, script_info in enumerate(limited_links[:3]):  # 显示前3个
+                            print(f"     [{i+1}] {script_info.get('preview_title', 'N/A')}")
+                            print(f"         作者: {script_info.get('preview_author', 'N/A')}")
+                            print(f"         点赞: {script_info.get('preview_likes_count', 0)}")
+                        if len(limited_links) > 3:
+                            print(f"     ... 还有 {len(limited_links) - 3} 个脚本")
+                            
+                else:
+                    if not args.quiet:
+                        print(f"   ⚠ {page_desc} 未提取到任何脚本")
+                        
+            except Exception as e:
+                print(f"   ❌ {page_desc} 爬取失败: {e}")
+                if args.verbose:
+                    import traceback
+                    traceback.print_exc()
     
     return all_preview_data
 
@@ -386,6 +421,21 @@ def main():
         for error in validation_errors:
             print(f"   - {error}")
         sys.exit(1)
+    
+    # 如果使用 --strategy-only，设置策略相关的URL
+    if args.strategy_only:
+        strategy_urls = [
+            ('https://www.tradingview.com/scripts/?script_type=strategies', args.pages),  # 普通策略页面，使用用户指定的页数
+            ('https://www.tradingview.com/scripts/editors-picks/?script_type=strategies', 1)  # 编辑推荐只有1页
+        ]
+        # 覆盖 base_url，后面会用到这个列表
+        args.strategy_urls = strategy_urls
+        if not args.quiet:
+            print("🎯 策略模式: 将只爬取策略相关页面")
+            print(f"   1. 普通策略页面 ({args.pages}页): https://www.tradingview.com/scripts/?script_type=strategies")
+            print(f"   2. 编辑推荐策略页面 (1页): https://www.tradingview.com/scripts/editors-picks/?script_type=strategies")
+    else:
+        args.strategy_urls = [(args.base_url, args.pages)]
     
     # 打印头部信息
     print_header(args)

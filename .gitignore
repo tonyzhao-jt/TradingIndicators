@@ -1,2 +1,76 @@
 *.json
 *.html
+*.parquet
+
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyd
+venv/
+env/
+.venv/
+.env
+build/
+dist/
+eggs/
+*.egg-info/
+pip-wheel-metadata/
+
+# Cache / test
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+output/
+checkpoints/
+
+# Logs
+*.log
+logs/
+nohup.out
+*.pid
+
+# Data / Models / Weights (large files)
+data/
+model_zoo/
+models/
+sample/
+tmp/
+collect/
+weights/
+*.ckpt
+*.pth
+*.pt
+*.safetensors
+*.h5
+*.onnx
+*.bin
+*.npz
+*.msgpack
+
+# Docker & build artifacts
+docker/*.tar
+docker/*.img
+build/
+dist/
+
+# Misc
+*.zip
+*.tar.gz
+*.egg

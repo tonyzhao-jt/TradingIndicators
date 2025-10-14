@@ -1,19 +1,24 @@
 # CUDA 容器，基于 NVIDIA CUDA Python 镜像
 FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu22.04
 
-# 安装 Python 3.11
-RUN apt-get update && apt-get install -y \
-    python3.11 \
-    python3.11-dev \
-    python3.11-distutils \
-    python3-pip \
-    && ln -s /usr/bin/python3.11 /usr/bin/python \
-    && ln -s /usr/bin/python3.11 /usr/bin/python3
-
 ENV DEBIAN_FRONTEND=noninteractive
 ENV POETRY_VIRTUALENVS_CREATE=false
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# 添加 deadsnakes PPA 来安装 Python 3.12
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa -y
+
+# 安装 Python 3.12
+RUN apt-get update && apt-get install -y \
+    python3.12 \
+    python3.12-dev \
+    python3.12-venv \
+    curl \
+    && if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python3.12 /usr/bin/python; fi \
+    && if [ ! -e /usr/bin/python3 ]; then ln -s /usr/bin/python3.12 /usr/bin/python3; fi \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 
 # 常用依赖和Chrome浏览器依赖
 RUN apt-get update && \
@@ -58,16 +63,16 @@ RUN apt-get update && \
 WORKDIR /workspace/trading_indicators
 
 # 安装基础 Python 包，包括 CUDA 相关包
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-RUN pip install cupy-cuda12x
+RUN python3.12 -m pip install --upgrade pip setuptools wheel
+RUN python3.12 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+RUN python3.12 -m pip install cupy-cuda12x
 
 # 复制项目文件（如果有 requirements.txt 会一起复制）
 COPY . /workspace/trading_indicators
 
 # 如果有 requirements.txt，会安装依赖
 RUN if [ -f /workspace/trading_indicators/requirements.txt ]; then \
-        pip install --no-cache-dir -r /workspace/trading_indicators/requirements.txt; \
+        python3.12 -m pip install --no-cache-dir -r /workspace/trading_indicators/requirements.txt; \
     else \
         echo "no requirements.txt found, skipping pip install"; \
     fi

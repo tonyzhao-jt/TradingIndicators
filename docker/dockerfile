@@ -48,6 +48,7 @@ WORKDIR /workspace/trading_indicators
 
 # 安装基础 Python 包
 RUN pip install --upgrade pip setuptools wheel
+RUN pip install matplotlib pandas numpy scipy scikit-learn jupyterlab notebook seaborn plotly requests beautifulsoup4 lxml
 
 # 复制项目文件（如果有 requirements.txt 会一起复制）
 COPY . /workspace/trading_indicators
