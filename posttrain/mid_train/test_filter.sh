@@ -5,7 +5,7 @@ echo "Testing data_filter.py..."
 echo ""
 
 # Use the mixed dataset that was just created
-INPUT="/workspace/trading_indicators/outputs/dataset/mixed_dataset_script_0.7.json"
+INPUT="/workspace/trading_indicators/outputs/dataset/mixed_dataset_0.7_original.json"
 OUTPUT="/workspace/trading_indicators/outputs/mixed_train_filtered_test.json"
 REMOVED="/workspace/trading_indicators/outputs/mixed_train_removed_test.json"
 STATS="/workspace/trading_indicators/outputs/mixed_train_stats_test.json"

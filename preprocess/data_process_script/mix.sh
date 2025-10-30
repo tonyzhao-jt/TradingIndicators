@@ -3,7 +3,7 @@
 
 # Default paths (可以通过环境变量覆盖)
 SCRIPT_FILE="${SCRIPT_FILE:-/workspace/trading_indicators/outputs/dataset/script_20251030_095104.json}"
-SEGMENT_FILE="${SEGMENT_FILE:-/workspace/trading_indicators/outputs/dataset/segments_20251030_filters.json}"
+SEGMENT_FILE="${SEGMENT_FILE:-/workspace/trading_indicators/outputs/segments_20251014.json}"
 OUTPUT_DIR="${OUTPUT_DIR:-./outputs}"
 RATIO="${RATIO:-0.5}"
 SEED="${SEED:-42}"

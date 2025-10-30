@@ -6,7 +6,7 @@
 set -e  # Exit on error
 
 # Configuration
-DATA_PATH="/workspace/trading_indicators/outputs/dataset/segments_20251030_filters.json"
+DATA_PATH="/workspace/trading_indicators/outputs/dataset/segments_no_aug.json"
 MODEL_NAME="model_cache/models--Qwen--Qwen2.5-Coder-7B/snapshots/0396a76181e127dfc13e5c5ec48a8cee09938b02"
 MODEL_NAME="model_cache/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c"
 OUTPUT_DIR="./pine-coder-4b"
@@ -20,8 +20,8 @@ OUTPUT_DIR="${BASE_OUTPUT_DIR}_${CURRENT_DATE}"
 BATCH_SIZE=1
 GRADIENT_ACCUM_STEPS=4
 LEARNING_RATE=1e-5
-NUM_EPOCHS=3
-WARMUP_STEPS=100
+NUM_EPOCHS=5
+WARMUP_STEPS=50
 LOGGING_STEPS=10
 SAVE_STEPS=500
 

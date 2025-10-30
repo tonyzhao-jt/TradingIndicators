@@ -7,9 +7,9 @@ set -e  # Exit on error
 
 # Configuration
 NUM_GPUS=4
-DATA_PATH="/workspace/trading_indicators/outputs/dataset/mixed_dataset_0.7_filtered.json"
-MODEL_NAME="/workspace/trading_indicators/posttrain/mid_train/_20251030_084616/final"
-OUTPUT_DIR="./pine-coder-mid-2"
+DATA_PATH="/workspace/trading_indicators/outputs/mixed_train_filtered_test.json"
+MODEL_NAME="/workspace/trading_indicators/posttrain/mid_train/_20251030_122039/final"
+OUTPUT_DIR="./trained_models/pine-coder-mid-2"
 MAX_SEQ_LENGTH=32768 # 32k
 
 # Training hyperparameters
