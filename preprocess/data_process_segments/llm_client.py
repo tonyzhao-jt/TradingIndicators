@@ -16,12 +16,18 @@ class LLMClient:
     
     def __init__(self):
         """Initialize the LLM client."""
+        from config import LOCAL_QWEN_ENDPOINT, LOCAL_QWEN_API_KEY
+        
         # Set API key from environment
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        if not openai.api_key:
+        api_key = os.getenv("OPENAI_API_KEY", LOCAL_QWEN_API_KEY)
+        if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
-        self.client = openai.OpenAI()
+        # Use custom endpoint if configured
+        base_url = os.getenv("OPENAI_BASE_URL", LOCAL_QWEN_ENDPOINT)
+        
+        self.client = openai.OpenAI(api_key=api_key, base_url=base_url)
+        self.model = LLM_MODEL
         
     def score_segment_quality(self, description: str, code: str, max_retries: int = 3) -> Dict[str, Any]:
         """
@@ -71,7 +77,7 @@ Return ONLY a JSON object with:
         for attempt in range(max_retries):
             try:
                 response = self.client.chat.completions.create(
-                    model=LLM_MODEL,
+                    model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=LLM_TEMPERATURE,
                     max_tokens=300

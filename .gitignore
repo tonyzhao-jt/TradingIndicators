@@ -75,3 +75,4 @@ dist/
 *.tar.gz
 *.egg
 posttrain/mid_train/model_cache/*
+posttrain/mid_train/trained_models/*

@@ -5,7 +5,7 @@ echo "=== Quick Test of Data Process Segments ==="
 echo ""
 
 # Use a smaller file for testing
-TEST_INPUT="../../outputs/segments_20251014.json"
+TEST_INPUT="../../outputs/segments_raw_20251014.json"
 
 if [ ! -f "$TEST_INPUT" ]; then
     echo "Error: Test input file not found: $TEST_INPUT"

@@ -4,8 +4,10 @@ Data Process Segments - 处理restructured_data生成segment-wise的训练样本
 
 Pipeline:
 1. Pack: 提取restructured_data下的key，得到多条segment wise的数据 (description -> code) sample
-2. Filter: 去掉small code/no code snippets，并保证同一数据生成的多组数据不产生重复sample
-3. Quality Score: 用LLM对description -> code进行打分，保留分数高的segment samples
+2. Filter: 去掉small code/no code snippets、空字段，并保证同一数据生成的多组数据不产生重复sample
+3. Language Convert: 使用LLM将非英文的input和output翻译成英文
+4. Description Augment: 使用LLM检查description和code的匹配度，如果不匹配则基于code重新生成description（保留原description作为参考）
+5. Quality Score: 用LLM对description -> code进行打分，保留分数高的segment samples
 
 输出格式: [{"input": "description", "output": "code"}, ...]
 """
@@ -22,17 +24,23 @@ sys.path.append(str(Path(__file__).parent))
 
 from nodes.pack_node import PackNode
 from nodes.filter_node import FilterNode
+from nodes.language_convert_node import LanguageConvertNode
+from nodes.description_augment_node import DescriptionAugmentNode
 from nodes.quality_score_node import QualityScoreNode
 
 
 class DataProcessSegments:
-    def __init__(self, input_file=None, output_dir=None):
+    def __init__(self, input_file=None, output_dir=None, enable_language_convert=True, enable_description_augment=False, description_match_threshold=6.0):
         self.input_file = input_file
         self.output_dir = output_dir or "outputs"
+        self.enable_language_convert = enable_language_convert
+        self.enable_description_augment = enable_description_augment
         
         # Initialize nodes
         self.pack_node = PackNode()
         self.filter_node = FilterNode()
+        self.language_convert_node = LanguageConvertNode() if enable_language_convert else None
+        self.description_augment_node = DescriptionAugmentNode(match_threshold=description_match_threshold) if enable_description_augment else None
         self.quality_score_node = QualityScoreNode()
         
         # Create output directory
@@ -59,9 +67,27 @@ class DataProcessSegments:
         filtered_segments = self.filter_node.process(segments)
         print(f"After filtering: {len(filtered_segments)} segments")
         
-        # Step 3: Quality scoring
-        print("\n=== Step 3: Quality Scoring ===")
-        scored_segments = self.quality_score_node.process(filtered_segments)
+        # Step 3: Language conversion (if enabled)
+        current_segments = filtered_segments
+        if self.enable_language_convert and self.language_convert_node:
+            print("\n=== Step 3: Language Conversion ===")
+            current_segments = self.language_convert_node.process(current_segments)
+            print(f"After language conversion: {len(current_segments)} segments")
+        
+        # Step 4: Description augmentation (if enabled)
+        if self.enable_description_augment and self.description_augment_node:
+            print("\n=== Step 4: Description Augmentation ===")
+            current_segments = self.description_augment_node.process(current_segments)
+            print(f"After description augmentation: {len(current_segments)} segments")
+        
+        # Step 5: Quality scoring
+        step_num = 3
+        if self.enable_language_convert:
+            step_num += 1
+        if self.enable_description_augment:
+            step_num += 1
+        print(f"\n=== Step {step_num}: Quality Scoring ===")
+        scored_segments = self.quality_score_node.process(current_segments)
         print(f"After quality scoring: {len(scored_segments)} segments")
         
         # Save final results
@@ -81,12 +107,25 @@ def main():
     parser = argparse.ArgumentParser(description='Process restructured data into segment-wise samples')
     parser.add_argument('--input', required=True, help='Input JSON file with restructured_data')
     parser.add_argument('--output_dir', default='outputs', help='Output directory')
+    parser.add_argument('--enable_language_convert', type=str, default='true', 
+                        help='Enable language conversion (true/false)')
+    parser.add_argument('--enable_description_augment', type=str, default='false',
+                        help='Enable description augmentation (true/false, default: false)')
+    parser.add_argument('--description_match_threshold', type=float, default=6.0,
+                        help='Minimum match score to keep original description (0-10)')
     
     args = parser.parse_args()
     
+    # Parse boolean flags
+    enable_lang = args.enable_language_convert.lower() == 'true'
+    enable_aug = args.enable_description_augment.lower() == 'true'
+    
     processor = DataProcessSegments(
         input_file=args.input,
-        output_dir=args.output_dir
+        output_dir=args.output_dir,
+        enable_language_convert=enable_lang,
+        enable_description_augment=enable_aug,
+        description_match_threshold=args.description_match_threshold
     )
     
     processor.process()

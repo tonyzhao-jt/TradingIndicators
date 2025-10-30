@@ -1,19 +1,20 @@
 #!/bin/bash
 
-# Multi-GPU Training Script with torchrun
-# Launch 4-GPU training for Pine Script Code Generation
+# FSDP Training Script with Accelerate
+# Launch multi-GPU training with Fully Sharded Data Parallel
 
 set -e  # Exit on error
 
 # Configuration
-NUM_GPUS=4
 DATA_PATH="/workspace/trading_indicators/outputs/dataset/segments_20251030_filters.json"
-# MODEL_NAME="Qwen/Qwen2.5-Coder-7B"
 MODEL_NAME="model_cache/models--Qwen--Qwen2.5-Coder-7B/snapshots/0396a76181e127dfc13e5c5ec48a8cee09938b02"
-MODEL_NAME="model_cache/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554"
 MODEL_NAME="model_cache/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c"
-OUTPUT_DIR="./pine-coder-mid"
+OUTPUT_DIR="./pine-coder-4b"
 MAX_SEQ_LENGTH=4096
+
+# add date
+CURRENT_DATE=$(date +%Y%m%d_%H%M%S)
+OUTPUT_DIR="${BASE_OUTPUT_DIR}_${CURRENT_DATE}"
 
 # Training hyperparameters
 BATCH_SIZE=1
@@ -28,16 +29,19 @@ SAVE_STEPS=500
 FORMATTER_TYPE="instruction"
 INSTRUCTION_TEXT="Generate Pine Script v6 code based on the following trading strategy description."
 
+# FSDP config file
+FSDP_CONFIG="fsdp_config.yaml"
+
 echo "=================================================================="
-echo "Starting Multi-GPU Training with torchrun"
+echo "Starting FSDP Training with Accelerate"
 echo "=================================================================="
-echo "Number of GPUs: ${NUM_GPUS}"
 echo "Data path: ${DATA_PATH}"
 echo "Model: ${MODEL_NAME}"
 echo "Output directory: ${OUTPUT_DIR}"
 echo "Max sequence length: ${MAX_SEQ_LENGTH}"
 echo "Batch size per GPU: ${BATCH_SIZE}"
-echo "Effective batch size: $((NUM_GPUS * BATCH_SIZE * GRADIENT_ACCUM_STEPS))"
+echo "Gradient accumulation: ${GRADIENT_ACCUM_STEPS}"
+echo "FSDP Config: ${FSDP_CONFIG}"
 echo "=================================================================="
 echo ""
 
@@ -47,15 +51,19 @@ if [ ! -f "${DATA_PATH}" ]; then
     exit 1
 fi
 
-# Create output directory if it doesn't exist
+# Check if FSDP config exists
+if [ ! -f "${FSDP_CONFIG}" ]; then
+    echo "Error: FSDP config file not found at ${FSDP_CONFIG}"
+    exit 1
+fi
+
+# Create output directory
 mkdir -p "${OUTPUT_DIR}"
 
-# Launch training with torchrun
-torchrun \
-    --standalone \
-    --nnodes=1 \
-    --nproc_per_node=${NUM_GPUS} \
-    train_main_0.py \
+# Launch training with accelerate
+accelerate launch \
+    --config_file "${FSDP_CONFIG}" \
+    train_fsdp.py \
     --data_path "${DATA_PATH}" \
     --model_name "${MODEL_NAME}" \
     --max_seq_length ${MAX_SEQ_LENGTH} \
@@ -69,7 +77,7 @@ torchrun \
     --logging_steps ${LOGGING_STEPS} \
     --save_steps ${SAVE_STEPS} \
     --warmup_steps ${WARMUP_STEPS} \
-    --gradient_checkpointing
+    --bf16
 
 echo ""
 echo "=================================================================="

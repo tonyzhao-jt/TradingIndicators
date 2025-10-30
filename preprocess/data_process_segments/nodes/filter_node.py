@@ -13,12 +13,28 @@ class FilterNode:
         self.min_code_length = 10  # Minimum code length
         self.min_description_length = 20  # Minimum description length
     
+    def is_empty_field(self, value) -> bool:
+        """Check if a field is empty"""
+        if value is None:
+            return True
+        if isinstance(value, str):
+            return len(value.strip()) == 0
+        if isinstance(value, list):
+            if len(value) == 0:
+                return True
+            return all(isinstance(item, str) and len(item.strip()) == 0 for item in value)
+        return False
+    
     def process(self, segments: List[Dict]) -> List[Dict]:
         """Process segments and apply filters"""
         print(f"FilterNode: Processing {len(segments)} segments")
         
+        # Step 0: Remove segments with empty fields
+        non_empty_segments = self.filter_empty_fields(segments)
+        print(f"FilterNode: After removing empty fields: {len(non_empty_segments)} segments")
+        
         # Step 1: Remove small/no code snippets
-        valid_segments = self.filter_small_code(segments)
+        valid_segments = self.filter_small_code(non_empty_segments)
         print(f"FilterNode: After removing small code: {len(valid_segments)} segments")
         
         # Step 2: Remove duplicates
@@ -26,6 +42,22 @@ class FilterNode:
         print(f"FilterNode: After removing duplicates: {len(unique_segments)} segments")
         
         return unique_segments
+    
+    def filter_empty_fields(self, segments: List[Dict]) -> List[Dict]:
+        """Filter out segments with empty input or output fields"""
+        valid_segments = []
+        
+        for segment in segments:
+            input_field = segment.get('input', '')
+            output_field = segment.get('output', '')
+            
+            # Check if either field is empty
+            if self.is_empty_field(input_field) or self.is_empty_field(output_field):
+                continue
+            
+            valid_segments.append(segment)
+        
+        return valid_segments
     
     def filter_small_code(self, segments: List[Dict]) -> List[Dict]:
         """Filter out segments with small or no code"""

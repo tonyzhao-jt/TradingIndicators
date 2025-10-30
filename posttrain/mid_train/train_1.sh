@@ -7,13 +7,10 @@ set -e  # Exit on error
 
 # Configuration
 NUM_GPUS=4
-DATA_PATH="/workspace/trading_indicators/outputs/dataset/segments_20251030_filters.json"
-# MODEL_NAME="Qwen/Qwen2.5-Coder-7B"
-MODEL_NAME="model_cache/models--Qwen--Qwen2.5-Coder-7B/snapshots/0396a76181e127dfc13e5c5ec48a8cee09938b02"
-MODEL_NAME="model_cache/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554"
-MODEL_NAME="model_cache/models--Qwen--Qwen3-4B/snapshots/1cfa9a7208912126459214e8b04321603b3df60c"
-OUTPUT_DIR="./pine-coder-mid"
-MAX_SEQ_LENGTH=4096
+DATA_PATH="/workspace/trading_indicators/outputs/dataset/mixed_dataset_0.7_filtered.json"
+MODEL_NAME="/workspace/trading_indicators/posttrain/mid_train/_20251030_084616/final"
+OUTPUT_DIR="./pine-coder-mid-2"
+MAX_SEQ_LENGTH=32768 # 32k
 
 # Training hyperparameters
 BATCH_SIZE=1

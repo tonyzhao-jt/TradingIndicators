@@ -9,8 +9,8 @@ cd /workspace/trading_indicators/posttrain/mid_train
 # Run the token static checker with default settings
 echo "📊 Running token analysis on segments_20251014.json..."
 python token_static_check.py \
-    --model_name "Qwen/Qwen2.5-Coder-7B" \
-    --data_path "/workspace/trading_indicators/outputs/segments_20251014.json" \
+    --model_name "model_cache/models--Qwen--Qwen3-4B-Instruct-2507/snapshots/cdbee75f17c01a7cc42f958dc650907174af0554" \
+    --data_path "/workspace/trading_indicators/outputs/dataset/mixed_dataset_script_0.7.json" \
     --output_path "token_statistics_report.json" \
     --show_distribution
 

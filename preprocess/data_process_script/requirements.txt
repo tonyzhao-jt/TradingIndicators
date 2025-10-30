@@ -1,0 +1,3 @@
+# Python dependencies for data_process_script
+openai>=1.0.0
+python-dotenv>=1.0.0

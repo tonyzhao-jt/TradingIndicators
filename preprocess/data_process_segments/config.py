@@ -26,3 +26,6 @@ LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 
 # Code similarity threshold for deduplication
 SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.85"))  # Threshold for considering code similar
+
+# Description-code match threshold for augmentation (only used when --enable_description_augment true)
+DESCRIPTION_MATCH_THRESHOLD = float(os.getenv("DESCRIPTION_MATCH_THRESHOLD", "6.0"))  # Minimum match score (0-10) to keep original description

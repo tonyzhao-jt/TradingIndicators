@@ -51,6 +51,32 @@
     "output": "@version=6strategy(\"SMMA 21/50/200 + RSI14 -5/15m\", overlay=true, initial_capital=10000, calc_on_every_tick=true, pyramiding=0, max_bars_back=5000)"
   },
 ```
+# Not match up well
+可以看到描述本身非常不对应
+```
+{
+    "input": "Conditions that filter valid trade setups based on volatility, price proximity to mid-range, and time validity.",
+    "output": [
+      "atrGuard    = atr14/close < 0.0025",
+      "midGuard    = math.abs(close - mid20) / mid20 < 0.003",
+      "chooseTrade = not atrGuard and not midGuard",
+      "timeValid   = (startTS==0 or time>=startTS) and (endTS==0 or time<endTS)"
+    ]
+  },
+  {
+    "input": "Uses ADX and DI indicators to confirm trend strength and direction, suggesting institutional participation in strong trends.",
+    "output": [
+      "plusDM   = math.max(high - high[1], 0)",
+      "minusDM  = math.max(low[1] - low, 0)",
+      "trarto   = math.max(high - low, math.max(math.abs(high - close[1]), math.abs(low - close[1])))",
+      "plusDI   = 100 * ta.rma(plusDM,14) / trarto",
+      "minusDI  = 100 * ta.rma(minusDM,14) / trarto",
+      "dx       = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)",
+      "adx14    = ta.rma(dx,14)",
+      "adxCond   = adx14 > 20"
+    ]
+  },
+```
 
 # Emoji
 这个要不要去掉还是得看看？
