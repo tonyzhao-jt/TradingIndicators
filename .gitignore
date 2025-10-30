@@ -1,7 +1,7 @@
 *.json
 *.html
 *.parquet
-
+*.wandb
 
 # OS / Editor
 .DS_Store
@@ -74,3 +74,4 @@ dist/
 *.zip
 *.tar.gz
 *.egg
+posttrain/mid_train/model_cache/*
